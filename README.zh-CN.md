@@ -6,6 +6,36 @@
 [接入说明](docs/integration.md) · [实测与复现](docs/results.md) ·
 [已有工作的对照](docs/related-work.md)
 
+## 谁来用？输入、输出是什么？
+
+这是给 **Agent 应用开发者** 接入的 Python 库，接在工具执行与模型输入之间。
+证据处理本身在 CPU 上运行，不需要显卡；诊断由开发者已有的大模型完成。
+
+```text
+工具返回的日志、配置或 JSON + 当前问题 + 输入预算
+                     ↓ EvidencePack
+证据 JSON：选中的完整片段、来源、行号/记录位置、引用编号、证据包编号
+                     ↓ 你已有的大模型
+诊断结论 + 引用编号 + 逐字引文
+                     ↓ EvidencePack 核验
+引文通过 / 引文不匹配；应用再决定是否接受回答
+```
+
+| 调用 | 开发者提供的输入 | 库返回的输出 |
+| --- | --- | --- |
+| `capture(source, text)` | 来源名称和原始文本；JSON 文本可加 `media_type="json"` | 保存结果及其 ID |
+| `pack(question, ids, budget=2000)` | 要解决的问题、已保存结果的 ID、预算 | 证据包；`pack.to_json()` 可送给模型 |
+| `verify(pack.receipt, citation, quote)` | 证据包编号、片段的引用编号、模型给出的引文 | `valid` 是否匹配，以及 `reason` 原因 |
+
+“回执”就是用于后续核验的证据包编号。库返回的是证据，最终诊断由你的模型生成。
+核验通过表示引文对得上，不表示模型的整段推理一定正确。
+
+安装后执行 `python -m examples.quickstart`，可以看到实际输入和两种输出。
+这个最小示例使用生成的日志和预设引文，明确不调用模型，也不产生真实诊断。
+开发者接入时，将示例字符串替换为自己的工具结果，把证据 JSON 交给已有模型，
+要求它附引用编号和逐字引文，再调用 `verify()` 检查。
+[工具中间件示例](examples/tool_middleware.py)展示了如何包装已有工具调用。
+
 ## 背景与问题
 
 运维 Agent 为了一次诊断，可能读取大量日志、配置和命令输出。真正决定结论的内容
@@ -58,10 +88,11 @@ cd evidencepack
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
+python -m examples.quickstart
 python -m examples.diagnose
 ```
 
-示例会启动两个临时本地 HTTP 进程，产生真实的 502 故障，采集输出，按选中的配置
+其中 `diagnose` 示例会启动两个临时本地 HTTP 进程，产生真实的 502 故障，采集输出，按选中的配置
 和运行状态推导最小补丁，再请求服务验证是否变成 200。它同时展示真实引文通过、
 伪造引文被拒绝，结束时清理子进程。这部分使用透明的规则修复器；5090 上的模型
 评测另行记录。

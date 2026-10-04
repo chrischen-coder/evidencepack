@@ -14,6 +14,38 @@ EvidencePack is a small Python library for that boundary. Archive the exact tool
 output once, select complete task-relevant excerpts within a serialized budget,
 then validate the model's quotations against the returned pack's receipt.
 
+## Who uses it, and what goes in and out?
+
+This is a library for developers who already have an agent and tools. It runs
+between tool execution and model input. EvidencePack's core needs no GPU and
+does not call a model; your application supplies the model and diagnostic logic.
+
+```text
+Tool logs / configuration + task + budget
+                  ↓ EvidencePack
+Evidence JSON with source, line / record locator, citation ID and pack receipt
+                  ↓ your existing model
+Diagnosis with citations and exact quotes
+                  ↓ EvidencePack verification
+Quote accepted or rejected; your application decides what to do next
+```
+
+| Call | You provide | You receive |
+| --- | --- | --- |
+| `capture(source, text)` | A source label and the original text; JSON text may use `media_type="json"` | An artifact containing the stored output's ID |
+| `pack(question, ids, budget=2000)` | A task, captured IDs and an allowance | A pack; `pack.to_json()` is the payload to send to your model |
+| `verify(pack.receipt, citation, quote)` | The pack ID, quoted excerpt's ID and exact quote | A `Verdict` with `valid` and `reason` |
+
+The receipt is simply the pack's ID for later quotation checks. The output of
+`pack()` is evidence, while the diagnostic answer comes from your model. Passing
+quotation checks does not establish that the model's reasoning is correct.
+
+After the installation below, run `python -m examples.quickstart` to see both
+outputs from generated logs, without any model configuration. Replace its
+strings with your tool results. Put `pack.to_json()` into your model's input,
+request citations and exact quotes, and check those quotes before accepting the
+answer. [The host integration](examples/tool_middleware.py) wraps existing tools.
+
 ![Actual fault experiment and measured comparisons](docs/assets/demo.png)
 
 ## What it guarantees
@@ -45,10 +77,11 @@ cd evidencepack
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
+python -m examples.quickstart
 python -m examples.diagnose
 ```
 
-The example starts two disposable loopback HTTP processes, captures an actual
+The `diagnose` example starts two disposable loopback HTTP processes, captures an actual
 502 failure, and applies an observation-derived rule patch. It prints the
 measured 200 response and accepts a real quote while rejecting an invented one.
 Both child processes are cleaned up. This demo uses no LLM.
