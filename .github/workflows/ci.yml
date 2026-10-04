@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install -e '.[dev,tokens,mcp]'
+      - run: ruff check src tests benchmarks examples
+      - run: ruff format --check src tests benchmarks examples
+      - run: mypy
+      - run: python -m pytest
+      - run: python -m build
+      - name: Check installed wheel outside checkout
+        run: |
+          python -m venv "$RUNNER_TEMP/evidencepack-wheel"
+          "$RUNNER_TEMP/evidencepack-wheel/bin/pip" install dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/evidencepack-wheel/bin/evidencepack" --help

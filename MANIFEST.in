@@ -1,0 +1,8 @@
+include README.md README.zh-CN.md CONTRIBUTING.md LICENSE .gitignore .gitattributes
+recursive-include src *.py py.typed
+recursive-include tests *.py
+recursive-include benchmarks *.py
+recursive-include examples *.py
+recursive-include docs *.md *.json *.jsonl *.txt *.png *.patch
+recursive-include .github *.yml
+global-exclude __pycache__ *.py[cod] .DS_Store ._*

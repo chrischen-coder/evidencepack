@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "evidencepack"
+version = "0.1.0"
+description = "Budgeted, recoverable tool evidence with verifiable exposure receipts for agents."
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{name = "Chris Chen"}]
+dependencies = []
+readme = "README.md"
+keywords = ["agents", "evidence", "context", "mcp", "observability"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.optional-dependencies]
+tokens = ["tiktoken>=0.9,<1"]
+mcp = ["mcp>=1.25,<2"]
+eval = ["transformers>=4.51,<5", "tiktoken>=0.9,<1"]
+demo = ["matplotlib>=3.9,<4"]
+dev = ["pytest>=8", "ruff>=0.11", "mypy>=1.15", "build>=1.2"]
+
+[project.scripts]
+evidencepack = "evidencepack.cli:main"
+
+[project.urls]
+Repository = "https://github.com/chrischen-coder/evidencepack"
+Issues = "https://github.com/chrischen-coder/evidencepack/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+evidencepack = ["py.typed"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src/evidencepack"]
+
+[[tool.mypy.overrides]]
+module = ["transformers.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

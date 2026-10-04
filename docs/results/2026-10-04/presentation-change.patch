@@ -1,0 +1,26 @@
+--- a/src/evidencepack/selection.py
++++ b/src/evidencepack/selection.py
+@@ -204,6 +204,7 @@
+             for unit, _score in candidates:
+                 if include(unit, share):
+                     break
++        scores = {unit.citation: score for unit, score in ranked}
+         ranked = ranked[: self.candidate_limit]
+         ranked.sort(
+             key=lambda item: (
+@@ -214,7 +215,14 @@
+         )
+         for unit, _score in ranked:
+             include(unit)
+-        selected.sort(key=lambda unit: (unit.source, unit.artifact_id, unit.ordinal, unit.locator))
++        selected.sort(
++            key=lambda unit: (
++                -scores[unit.citation] / max(1, self.counter.count(unit.text)),
++                unit.source,
++                unit.ordinal,
++                unit.artifact_id,
++            )
++        )
+         pack = projection(selected)
+         final_cost = self.counter.count(pack.to_json())
+         while final_cost > budget and selected:
